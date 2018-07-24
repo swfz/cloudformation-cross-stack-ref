@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  ProjectNameParameter:
+    Type: String
+    Default: 'Sample'
+    Description: Project name for tag
+  RDSInstanceTypeParameter:
+    Type: String
+    Default: 'db.m1.small'
+    Description: rds instance type
+  RDSUserParameter:
+    Type: String
+    Default: 'root'
+    Description: rds root user
+  RDSPasswordParameter:
+    Type: String
+    Default: ''
+    Description: rds root password
+
+Resources:
+# RDS(MySQL5.6)
+  RDSParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: !Sub ${ProjectNameParameter} RDS Parameter Group
+      Family: MySQL5.6
+      Parameters:
+        character_set_results: utf8mb4
+        character_set_client: utf8mb4
+        character_set_connection: utf8mb4
+
+  RDSSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: !Sub ${ProjectNameParameter} RDS subnet group
+      SubnetIds:
+        - {"Fn::ImportValue": !Sub "${ProjectNameParameter}-MiddleWare19A"}
+        - {"Fn::ImportValue": !Sub "${ProjectNameParameter}-MiddleWare20C"}
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+
+  RDSSecurityByEC2SecurityGroup:
+    Type: "AWS::RDS::DBSecurityGroup"
+    Properties:
+      GroupDescription: "Ingress for Amazon EC2 security group"
+      EC2VpcId: {"Fn::ImportValue": !Sub "${ProjectNameParameter}-VPC"}
+
+  RDSInstance:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      DBName:
+        Ref: ProjectNameParameter
+      DBInstanceIdentifier: !Sub ${AWS::StackName}-rds
+      AutoMinorVersionUpgrade: false
+      AllocatedStorage: "30"
+      MultiAZ: false
+      DBSubnetGroupName:
+        Ref: RDSSubnetGroup
+      DBParameterGroupName:
+        Ref: RDSParameterGroup
+      VPCSecurityGroups:
+        - {"Fn::ImportValue": !Sub "${ProjectNameParameter}-DefaultSecurityGroup"}
+      DBInstanceClass:
+        Ref: RDSInstanceTypeParameter
+      Engine: "MySQL"
+      StorageType: "gp2"
+      EngineVersion: "5.6"
+      MasterUsername:
+        Ref: "RDSUserParameter"
+      MasterUserPassword:
+        Ref: "RDSPasswordParameter"
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter

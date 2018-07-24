@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  AZ1Parameter:
+    Type: String
+    Default: 'ap-northeast-1a'
+    Description: select availability zone
+  ProjectNameParameter:
+    Type: String
+    Default: 'Sample'
+    Description: Project name for tag
+  RedisInstanceTypeParameter:
+    Type: String
+    Default: 'cache.t2.small'
+    Description: redis instance RDSInstanceTypeParameter
+
+Resources:
+# Redis 3.2
+  redisSecurityGroup:
+    Type: "AWS::ElastiCache::SecurityGroup"
+    Properties:
+      Description: redis SecurityGroup
+
+  redisSubnetGroup:
+    Type: "AWS::ElastiCache::SubnetGroup"
+    Properties:
+      Description: "Redis Subnet Group"
+      SubnetIds:
+        - {"Fn::ImportValue": !Sub "${ProjectNameParameter}-MiddleWare19A"}
+        - {"Fn::ImportValue": !Sub "${ProjectNameParameter}-MiddleWare20C"}
+
+  redisParameterGroup:
+    Type: "AWS::ElastiCache::ParameterGroup"
+    Properties:
+      Description: !Sub ${ProjectNameParameter}-ParameterGroup
+      CacheParameterGroupFamily: "redis3.2"
+      Properties:
+        tcp-keepalive: "300"
+
+  redisCluster:
+    Type: "AWS::ElastiCache::CacheCluster"
+    Properties:
+      ClusterName: !Sub ${ProjectNameParameter}-redis
+      VpcSecurityGroupIds:
+        - {"Fn::ImportValue": !Sub "${ProjectNameParameter}-DefaultSecurityGroup"}
+      CacheSubnetGroupName:
+        Ref: redisSubnetGroup
+      PreferredAvailabilityZone:
+        Ref: AZ1Parameter
+
+      AutoMinorVersionUpgrade: "false"
+      Engine: "redis"
+      EngineVersion: "3.2.4"
+      CacheNodeType:
+        Ref: RedisInstanceTypeParameter
+      NumCacheNodes: "1"
+      Tags:
+       - Key: Project
+         Value:
+           Ref: ProjectNameParameter
