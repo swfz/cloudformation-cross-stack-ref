@@ -1,0 +1,393 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  AZ1Parameter:
+    Type: String
+    Default: 'ap-northeast-1a'
+    Description: select availability zone
+  AZ2Parameter:
+    Type: String
+    Default: 'ap-northeast-1c'
+    Description: select availability zone
+  ProjectNameParameter:
+    Type: String
+    Default: 'Sample'
+    Description: Project name for tag
+  RedisInstanceTypeParameter:
+    Type: String
+    Default: 'cache.t2.small'
+    Description: redis instance RDSInstanceTypeParameter
+  RDSInstanceTypeParameter:
+    Type: String
+    Default: 'db.m1.small'
+    Description: rds instance type
+  RDSUserParameter:
+    Type: String
+    Default: 'root'
+    Description: rds root user
+  RDSPasswordParameter:
+    Type: String
+    Default: ''
+    Description: rds root password
+
+Resources:
+  myVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value:
+          Ref: ProjectNameParameter
+
+# route table
+  myRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: myVPC
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value: Public
+
+# internet gateway
+  sampleInternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+  attacheGatewayToVPC:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      InternetGatewayId:
+        Ref: sampleInternetGateway
+      VpcId:
+        Ref: myVPC
+# route
+  sampleRoute:
+    Type: AWS::EC2::Route
+    DependsOn: sampleInternetGateway
+    Properties:
+      RouteTableId:
+        Ref: myRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: sampleInternetGateway
+
+# subnet public0a. association subnet
+  public0A:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Ref: AZ1Parameter
+      CidrBlock: 10.0.0.0/24
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value: 'Public 0a'
+      VpcId:
+        Ref: myVPC
+  public0ASubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: public0A
+      RouteTableId:
+        Ref: myRouteTable
+# subnet public1c. association subnet
+  public1C:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Ref: AZ2Parameter
+      CidrBlock: 10.0.1.0/24
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value: 'Public 1c'
+      VpcId:
+        Ref: myVPC
+  public1CSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: public1C
+      RouteTableId:
+        Ref: myRouteTable
+
+# subnet backend15A. association subnet
+  backend15A:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Ref: AZ1Parameter
+      CidrBlock: 10.0.15.0/24
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value: 'Backend 15a'
+      VpcId:
+        Ref: myVPC
+  backend15ASubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: backend15A
+      RouteTableId:
+        Ref: myRouteTable
+# subnet backend16C. association subnet
+  backend16C:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Ref: AZ2Parameter
+      CidrBlock: 10.0.16.0/24
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value: 'Backend 16c'
+      VpcId:
+        Ref: myVPC
+  backend16CSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: backend16C
+      RouteTableId:
+        Ref: myRouteTable
+# subnet middleware19A. association subnet
+  middleware19A:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Ref: AZ1Parameter
+      CidrBlock: 10.0.19.0/24
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value: 'Middleware 19a'
+      VpcId:
+        Ref: myVPC
+  middleware19ASubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: middleware19A
+      RouteTableId:
+        Ref: myRouteTable
+# subnet middleware20C. association subnet
+  middleware20C:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      MapPublicIpOnLaunch: true
+      AvailabilityZone:
+        Ref: AZ2Parameter
+      CidrBlock: 10.0.20.0/24
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+      - Key: Name
+        Value: 'Middleware 20c'
+      VpcId:
+        Ref: myVPC
+  middleware20CSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId:
+        Ref: middleware20C
+      RouteTableId:
+        Ref: myRouteTable
+
+# security group
+  albSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security Group
+      VpcId:
+        Ref: myVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: '-1'
+        FromPort: '0'
+        ToPort: '0'
+        CidrIp: 0.0.0.0/0
+      Tags:
+       - Key: Name
+         Value: !Sub ${ProjectNameParameter} ALB SG
+  gatewaySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Default SecurityGroup
+      VpcId:
+        Ref: myVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: '-1'
+        FromPort: '0'
+        ToPort: '0'
+        CidrIp: 0.0.0.0/0
+      Tags:
+       - Key: Name
+         Value:
+           Ref: ProjectNameParameter
+  defaultSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Default SecurityGroup
+      VpcId:
+        Ref: myVPC
+      SecurityGroupIngress:
+      - IpProtocol: '-1'
+        FromPort: '0'
+        ToPort: '0'
+        CidrIp: 10.0.0.0/16
+      SecurityGroupEgress:
+      - IpProtocol: '-1'
+        FromPort: '0'
+        ToPort: '0'
+        CidrIp: 0.0.0.0/0
+      Tags:
+       - Key: Name
+         Value:
+           Ref: ProjectNameParameter
+
+# Redis 3.2
+  redisSecurityGroup:
+    Type: "AWS::ElastiCache::SecurityGroup"
+    Properties:
+      Description: redis SecurityGroup
+
+  redisSubnetGroup:
+    Type: "AWS::ElastiCache::SubnetGroup"
+    Properties:
+      Description: "Redis Subnet Group"
+      SubnetIds:
+        - Ref: middleware19A
+        - Ref: middleware20C
+
+  redisParameterGroup:
+    Type: "AWS::ElastiCache::ParameterGroup"
+    Properties:
+      Description: !Sub ${ProjectNameParameter}-ParameterGroup
+      CacheParameterGroupFamily: "redis4.0"
+      Properties:
+        tcp-keepalive: "300"
+
+  redisCluster:
+    Type: "AWS::ElastiCache::CacheCluster"
+    Properties:
+      ClusterName: !Sub ${ProjectNameParameter}-redis
+      VpcSecurityGroupIds:
+        - Ref: defaultSecurityGroup
+      CacheSubnetGroupName:
+        Ref: redisSubnetGroup
+      PreferredAvailabilityZone:
+        Ref: AZ1Parameter
+
+      AutoMinorVersionUpgrade: "false"
+      Engine: "redis"
+      EngineVersion: "4.0.10"
+      CacheNodeType:
+        Ref: RedisInstanceTypeParameter
+      NumCacheNodes: "1"
+      Tags:
+       - Key: Project
+         Value:
+           Ref: ProjectNameParameter
+# RDS(MySQL5.6)
+  RDSParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: !Sub ${ProjectNameParameter} RDS Parameter Group
+      Family: MySQL5.6
+      Parameters:
+        character_set_results: utf8mb4
+        character_set_client: utf8mb4
+        character_set_connection: utf8mb4
+
+  RDSSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: !Sub ${ProjectNameParameter} RDS subnet group
+      SubnetIds:
+        - Ref: middleware19A
+        - Ref: middleware20C
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+
+  RDSSecurityByEC2SecurityGroup:
+    Type: "AWS::RDS::DBSecurityGroup"
+    Properties:
+      GroupDescription: "Ingress for Amazon EC2 security group"
+      EC2VpcId:
+        Ref: myVPC
+
+  RDSInstance:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      DBName:
+        Ref: AWS::StackName
+      DBInstanceIdentifier: !Sub ${AWS::StackName}-rds
+      AutoMinorVersionUpgrade: false
+      AllocatedStorage: "30"
+      MultiAZ: false
+      DBSubnetGroupName:
+        Ref: RDSSubnetGroup
+      DBParameterGroupName:
+        Ref: RDSParameterGroup
+      VPCSecurityGroups:
+        - Ref: defaultSecurityGroup
+      DBInstanceClass:
+        Ref: RDSInstanceTypeParameter
+      Engine: "MySQL"
+      StorageType: "gp2"
+      EngineVersion: "5.7"
+      MasterUsername:
+        Ref: "RDSUserParameter"
+      MasterUserPassword:
+        Ref: "RDSPasswordParameter"
+      Tags:
+      - Key: Project
+        Value:
+          Ref: ProjectNameParameter
+

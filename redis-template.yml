@@ -32,7 +32,7 @@ Resources:
     Type: "AWS::ElastiCache::ParameterGroup"
     Properties:
       Description: !Sub ${ProjectNameParameter}-ParameterGroup
-      CacheParameterGroupFamily: "redis3.2"
+      CacheParameterGroupFamily: "redis4.0"
       Properties:
         tcp-keepalive: "300"
 
@@ -49,7 +49,7 @@ Resources:
 
       AutoMinorVersionUpgrade: "false"
       Engine: "redis"
-      EngineVersion: "3.2.4"
+      EngineVersion: "4.0.10"
       CacheNodeType:
         Ref: RedisInstanceTypeParameter
       NumCacheNodes: "1"
